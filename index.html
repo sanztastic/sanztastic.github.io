@@ -1,27 +1,567 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projects</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shanand Shrestha — Character Sheet</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%230b1026'/%3E%3Crect x='7' y='2' width='2' height='2' fill='%23ffd447'/%3E%3Crect x='5' y='4' width='6' height='2' fill='%23ffd447'/%3E%3Crect x='4' y='6' width='8' height='4' fill='%23ffd447'/%3E%3Crect x='5' y='10' width='6' height='2' fill='%23ffd447'/%3E%3Crect x='7' y='12' width='2' height='2' fill='%23ffd447'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b1026;
+    --box1:#1a2a6c;
+    --box2:#0f1642;
+    --panel:rgba(255,255,255,0.03);
+    --border:#eef2ff;
+    --gold:#ffd447;
+    --text:#eef2ff;
+    --text-dim:#9aa3c7;
+    --green:#5fd97a;
+    --green-dark:#1f6b34;
+    --hp:#e6483c;
+    --hp-dark:#8a1f18;
+    --mp:#4c8bf5;
+    --mp-dark:#1c3f8a;
+    --font-pixel:'Press Start 2P', monospace;
+    --font-term:'VT323', monospace;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-term);
+    font-size:19px;
+    line-height:1.5;
+  }
+  ::selection{ background:var(--gold); color:var(--bg); }
+  a{ color:inherit; }
+  *:focus-visible{ outline:2px solid var(--gold); outline-offset:3px; }
+
+  /* ---------- menu bar ---------- */
+  .menu-bar{
+    position:sticky;
+    top:0;
+    z-index:30;
+    background:var(--box2);
+    border-bottom:4px solid var(--border);
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px 22px;
+    padding:14px 16px;
+  }
+  .menu-bar a{
+    font-family:var(--font-pixel);
+    font-size:0.65rem;
+    color:var(--text-dim);
+    text-decoration:none;
+    padding:6px 2px;
+    transition:color .15s ease;
+  }
+  .menu-bar a::before{ content:'\25B8\00a0'; opacity:0; transition:opacity .15s ease; }
+  .menu-bar a:hover, .menu-bar a:focus-visible{ color:var(--gold); }
+  .menu-bar a:hover::before, .menu-bar a:focus-visible::before{ opacity:1; }
+
+  main{ max-width:880px; margin:0 auto; padding:28px 18px 60px 18px; }
+
+  /* ---------- generic rpg box ---------- */
+  .rpg-box{
+    background:linear-gradient(180deg, var(--box1), var(--box2));
+    border:4px solid var(--border);
+    box-shadow: inset 0 0 0 4px var(--bg);
+    padding:26px 24px;
+    margin-bottom:28px;
+    scroll-margin-top:80px;
+  }
+  .rpg-title{
+    font-family:var(--font-pixel);
+    font-size:clamp(0.8rem, 2vw, 1rem);
+    color:var(--gold);
+    margin:0 0 22px 0;
+    letter-spacing:0.5px;
+    line-height:1.7;
+  }
+
+  /* ---------- hero / status ---------- */
+  .status-top{
+    display:flex;
+    gap:22px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:22px;
+  }
+  .portrait{
+    width:88px; height:88px;
+    flex-shrink:0;
+    background:var(--box2);
+    border:4px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-pixel);
+    font-size:1.4rem;
+    color:var(--gold);
+  }
+  .name-plate{ font-family:var(--font-pixel); font-size:clamp(1rem, 3vw, 1.5rem); }
+  .name-plate .lv{ color:var(--gold); font-size:0.7em; margin-left:10px; }
+  .class-line{ font-size:1.35rem; color:var(--text-dim); margin-top:10px; }
+  .flavor{ font-size:1.15rem; color:var(--gold); margin-top:4px; font-style:italic; }
+
+  .bars{ margin:22px 0; }
+  .bar-row{ display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .bar-label{ font-family:var(--font-pixel); font-size:0.65rem; width:34px; color:var(--text-dim); flex-shrink:0; }
+  .bar{ flex:1; height:16px; background:var(--box2); border:2px solid var(--border); overflow:hidden; }
+  .bar-fill{ height:100%; }
+  .bar.hp .bar-fill{ background:repeating-linear-gradient(to right, var(--hp) 0 8px, var(--hp-dark) 8px 10px); }
+  .bar.mp .bar-fill{ background:repeating-linear-gradient(to right, var(--mp) 0 8px, var(--mp-dark) 8px 10px); }
+  .bar-num{ font-size:1rem; color:var(--text-dim); width:66px; text-align:right; flex-shrink:0; }
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+    gap:16px 26px;
+    margin-bottom:22px;
+  }
+  .stat-name{ display:block; margin-bottom:6px; font-size:1.05rem; color:var(--text); }
+  .stat-bar{ height:10px; background:var(--box2); border:2px solid var(--border); }
+  .stat-bar > div{ height:100%; background:repeating-linear-gradient(to right, var(--green) 0 6px, var(--green-dark) 6px 8px); }
+
+  .dialogue-box{
+    background:var(--box2);
+    border:3px solid var(--border);
+    padding:18px 20px;
+    font-size:1.3rem;
+    min-height:6.4em;
+  }
+  .dialogue-box .line{ margin:0 0 6px 0; }
+  .cursor{
+    display:inline-block;
+    color:var(--gold);
+    animation:blink 0.85s steps(1) infinite;
+  }
+  @keyframes blink{ 0%,49%{opacity:1;} 50%,100%{opacity:0;} }
+  @media (prefers-reduced-motion:reduce){ .cursor{ animation:none; } }
+
+  /* ---------- quests (experience) ---------- */
+  .quest-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:18px; }
+  .quest{ border:2px solid var(--border); background:var(--panel); padding:16px 18px; }
+  .quest-head{ display:flex; flex-wrap:wrap; gap:8px 16px; align-items:baseline; margin-bottom:8px; }
+  .quest-status{ font-family:var(--font-pixel); font-size:0.6rem; color:var(--green); }
+  .quest-name{ font-family:var(--font-pixel); font-size:0.78rem; }
+  .quest-dates{ font-size:1.05rem; color:var(--text-dim); margin-left:auto; white-space:nowrap; }
+  .quest-giver{ font-size:1.15rem; color:var(--gold); margin-bottom:8px; }
+  .quest-desc{ font-size:1.2rem; line-height:1.55; color:var(--text-dim); max-width:64ch; margin:0; }
+  .quest details{ margin-top:12px; }
+  .quest summary{
+    cursor:pointer;
+    list-style:none;
+    display:inline-block;
+    font-family:var(--font-pixel);
+    font-size:0.62rem;
+    color:var(--gold);
+  }
+  .quest summary::-webkit-details-marker{ display:none; }
+  .quest summary::before{ content:'\25B8\00a0'; }
+  .quest details[open] summary::before{ content:'\25BE\00a0'; }
+  .quest-bullets{ list-style:none; margin:14px 0 0 0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .quest-bullets li{
+    font-size:1.15rem;
+    line-height:1.5;
+    color:var(--text-dim);
+    padding-left:20px;
+    position:relative;
+  }
+  .quest-bullets li::before{
+    content:'\25C6';
+    color:var(--gold);
+    position:absolute;
+    left:0;
+    top:1px;
+    font-size:0.8rem;
+  }
+
+  /* ---------- abilities ---------- */
+  .ability-groups{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:22px; }
+  .ability-group h3{ font-family:var(--font-pixel); font-size:0.72rem; color:var(--gold); margin:0 0 12px 0; }
+  .ability-group ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .ability-group li{ font-size:1.2rem; }
+  .ability-group li::before{ content:'\25C6\00a0'; color:var(--gold); }
+
+  /* ---------- side quest / dungeon (featured demo) ---------- */
+  .dungeon-card{ border:3px solid var(--border); background:var(--panel); padding:22px; margin-bottom:24px; }
+  .dungeon-card h3{
+    font-family:var(--font-pixel);
+    font-size:0.9rem;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    margin:0 0 12px 0;
+  }
+  .tag-playable{ font-family:var(--font-pixel); font-size:0.55rem; color:var(--green); border:1px solid var(--green); padding:3px 6px; }
+  .tag-progress{ font-family:var(--font-pixel); font-size:0.55rem; color:var(--gold); border:1px solid var(--gold); padding:3px 6px; }
+  .dungeon-card .desc{ font-size:1.2rem; line-height:1.55; color:var(--text-dim); max-width:64ch; margin:0 0 8px 0; }
+  .dungeon-card .meta{ font-family:var(--font-pixel); font-size:0.58rem; color:var(--text-dim); margin-bottom:20px; line-height:1.8; }
+
+  .terminal-frame{
+    width:100%;
+    height:500px;
+    border:3px solid var(--border);
+    background:#000;
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  .terminal-frame iframe{
+    width:100%;
+    height:100%;
+    border:none;
+    display:block;
+  }
+  .terminal-start{
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .terminal-start-inner{ text-align:center; }
+  .terminal-start-title{
+    font-family:var(--font-pixel);
+    font-size:0.65rem;
+    color:var(--text-dim);
+    letter-spacing:1px;
+    margin:0 0 22px 0;
+  }
+  .terminal-start-btn{
+    background:var(--box2);
+    border:2px solid var(--gold);
+    color:var(--gold);
+    font-family:var(--font-pixel);
+    font-size:0.85rem;
+    padding:14px 28px;
+    cursor:pointer;
+    animation: blink 1.4s steps(1) infinite;
+  }
+  .terminal-start-btn:hover, .terminal-start-btn:focus-visible{
+    background:var(--gold);
+    color:var(--bg);
+    animation:none;
+  }
+  .terminal-start-hint{
+    font-family:var(--font-pixel);
+    font-size:0.55rem;
+    color:var(--text-dim);
+    margin:18px 0 0 0;
+  }
+  @media (prefers-reduced-motion:reduce){ .terminal-start-btn{ animation:none; } }
+
+  .src-link{ display:inline-block; margin-top:18px; font-size:1.15rem; text-decoration:underline; text-underline-offset:3px; }
+  .src-link:hover{ color:var(--gold); }
+
+  .other-quests{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; }
+  .other-quests li{
+    border:2px solid var(--border); background:var(--panel); padding:14px 16px;
+    display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:flex-start;
+  }
+  .other-quests h4{ font-family:var(--font-pixel); font-size:0.75rem; margin:0 0 8px 0; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .other-quests p{ margin:0 0 8px 0; color:var(--text-dim); font-size:1.15rem; max-width:48ch; }
+  .other-quests .tags{ font-family:var(--font-pixel); font-size:0.55rem; color:var(--text-dim); }
+  .other-quests a{ font-size:1.1rem; text-decoration:underline; text-underline-offset:3px; white-space:nowrap; }
+  .other-quests a:hover{ color:var(--gold); }
+
+  /* ---------- recruit / contact ---------- */
+  .recruit-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; }
+  .recruit-list li{
+    display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    border-bottom:2px dashed var(--border); padding-bottom:12px;
+  }
+  .recruit-list li:last-child{ border-bottom:none; padding-bottom:0; }
+  .recruit-label{ font-family:var(--font-pixel); font-size:0.65rem; color:var(--gold); }
+  .recruit-value{ font-size:1.3rem; }
+  .recruit-value a:hover{ color:var(--gold); text-decoration:underline; }
+
+  footer{
+    text-align:center;
+    padding:20px 18px 50px 18px;
+  }
+  footer .end-mark{ font-family:var(--font-pixel); font-size:0.75rem; color:var(--gold); margin-bottom:10px; }
+  footer .credit{ font-size:1.05rem; color:var(--text-dim); }
+</style>
 </head>
-
 <body>
-    <div class="main">
-        <div class="profile">
-<!--             <img class="profile-pic" src="img/profile.png" />
-            <div class="profile-info">
-                <h1 class="name">Shanand Shrestha</h1>
-                <h1 class="roll">Kathmandu, Nepal</h1>
-            </div> -->
-        </div>
-        <div class="assignment-table">
-            <div class="tbl-header">
-           
-            </div>
-        </div>
-</body>
 
+<nav class="menu-bar">
+  <a href="#status">Status</a>
+  <a href="#quests">Quests</a>
+  <a href="#abilities">Abilities</a>
+  <a href="#sidequest">Side Quest</a>
+  <a href="#party">Party</a>
+</nav>
+
+<main>
+
+  <!-- ================= STATUS ================= -->
+  <section id="status" class="rpg-box">
+    <div class="status-top">
+      <div class="portrait">SS</div>
+      <div>
+        <div class="name-plate">SHANAND <span class="lv">LV. 05</span></div>
+        <div class="class-line">CLASS: Backend Engineer — Java / Spring</div>
+        <div class="flavor">titled: the 2am query whisperer</div>
+      </div>
+    </div>
+
+    <div class="bars">
+      <div class="bar-row">
+        <span class="bar-label">HP</span>
+        <div class="bar hp"><div class="bar-fill" style="width:96%"></div></div>
+        <span class="bar-num">96/100</span>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">MP</span>
+        <div class="bar mp"><div class="bar-fill" style="width:88%"></div></div>
+        <span class="bar-num">88/100</span>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div><span class="stat-name">STR — Backend Development</span><div class="stat-bar"><div style="width:88%"></div></div></div>
+      <div><span class="stat-name">INT — System Design</span><div class="stat-bar"><div style="width:84%"></div></div></div>
+      <div><span class="stat-name">DEF — Debugging &amp; Reliability</span><div class="stat-bar"><div style="width:90%"></div></div></div>
+      <div><span class="stat-name">AGI — Learning New Stacks</span><div class="stat-bar"><div style="width:82%"></div></div></div>
+    </div>
+
+    <div class="dialogue-box" id="introBox"></div>
+  </section>
+
+  <!-- ================= QUESTS (experience) ================= -->
+  <section id="quests" class="rpg-box">
+    <h2 class="rpg-title">&#9612; QUEST LOG — COMPLETED</h2>
+    <ul class="quest-list">
+      <li class="quest">
+        <div class="quest-head">
+          <span class="quest-status">&#10003; COMPLETE</span>
+          <span class="quest-name">Java Software Engineer</span>
+          <span class="quest-dates">Jul 2024 – Dec 2025</span>
+        </div>
+        <div class="quest-giver">Guild: Smart Data Solution</div>
+        <p class="quest-desc">Built and shipped Java services for a U.S. healthcare clearinghouse, implementing ANSI X12 EDI transactions (835, 837, 277/277CA) and rewriting slow SQL to cut query latency across the platform.</p>
+        <details>
+          <summary>view full quest log</summary>
+          <ul class="quest-bullets">
+            <li>Built and maintained Java services for the Healthcare Clearinghouse platform, implementing and extending ANSI X12 EDI transaction types (835, 837, 277/277CA) for U.S. healthcare clients.</li>
+            <li>Shipped client-specific enhancements and resolved production incidents, keeping clearinghouse transaction processing reliable for live customers.</li>
+            <li>Improved database performance by rewriting inefficient SQL queries and introducing targeted indexing strategies, cutting query execution time and reducing application latency.</li>
+            <li>Partnered with business analysts, QA, and fellow engineers across the full SDLC — design, build, test, and release — to deliver production-quality software.</li>
+          </ul>
+        </details>
+      </li>
+      <li class="quest">
+        <div class="quest-head">
+          <span class="quest-status">&#10003; COMPLETE</span>
+          <span class="quest-name">Java Developer</span>
+          <span class="quest-dates">Feb 2022 – Jun 2024</span>
+        </div>
+        <div class="quest-giver">Guild: Code Himalaya</div>
+        <p class="quest-desc">Designed REST APIs for scheduler and data-migration workflows, and built an anti-money-laundering detection system and supporting microservices for a remittance platform.</p>
+        <details>
+          <summary>view full quest log</summary>
+          <ul class="quest-bullets">
+            <li>Designed and built REST APIs for scheduler and data-migration workflows powering a production web application.</li>
+            <li>Deployed and operated services on JBoss application servers and served as a direct technical point of contact for client integration work.</li>
+            <li>Built an Anti-Money Laundering (AML) detection system and supporting microservices for a remittance platform, strengthening fraud-detection coverage.</li>
+            <li>Designed and maintained relational data models across MySQL, PostgreSQL, and OracleDB.</li>
+            <li>Developed a CRM application using JSP, Servlet, and jQuery.</li>
+          </ul>
+        </details>
+      </li>
+      <li class="quest">
+        <div class="quest-head">
+          <span class="quest-status">&#10003; COMPLETE</span>
+          <span class="quest-name">Java Engineer</span>
+          <span class="quest-dates">Feb 2018 – Nov 2018</span>
+        </div>
+        <div class="quest-giver">Guild: Sys Inc.</div>
+        <p class="quest-desc">Built REST APIs with Spring and JAX-RS for code generation, scheduling, and security modules, working across SQL and NoSQL stores.</p>
+        <details>
+          <summary>view full quest log</summary>
+          <ul class="quest-bullets">
+            <li>Built REST APIs with Spring Framework and JAX-RS supporting code generation, scheduling, and security modules for a web application.</li>
+            <li>Contributed to setup and maintenance of CI/CD pipelines.</li>
+            <li>Worked across SQL and NoSQL stores (Cassandra, MySQL, PostgreSQL, MongoDB) to support application data needs.</li>
+            <li>Developed front-end features using GWT and React.js.</li>
+          </ul>
+        </details>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ================= ABILITIES ================= -->
+  <section id="abilities" class="rpg-box">
+    <h2 class="rpg-title">&#9612; ABILITIES &amp; EQUIPMENT</h2>
+    <div class="ability-groups">
+      <div class="ability-group">
+        <h3>Languages</h3>
+        <ul><li>Java</li><li>JavaScript</li></ul>
+      </div>
+      <div class="ability-group">
+        <h3>Backend &amp; Frameworks</h3>
+        <ul><li>Spring</li><li>Spring Boot</li><li>JAX-RS</li><li>JPA</li><li>Servlet/JSP</li></ul>
+      </div>
+      <div class="ability-group">
+        <h3>Data Stores</h3>
+        <ul><li>MySQL</li><li>PostgreSQL</li><li>MongoDB</li></ul>
+      </div>
+      <div class="ability-group">
+        <h3>Architecture &amp; Security</h3>
+        <ul><li>RESTful APIs</li><li>Microservices</li><li>JWT</li><li>Spring Security</li></ul>
+      </div>
+      <div class="ability-group">
+        <h3>Tools &amp; Equipment</h3>
+        <ul><li>Maven</li><li>Gradle</li><li>CI/CD</li><li>JBoss</li><li>GWT</li><li>React.js</li><li>jQuery</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SIDE QUEST ================= -->
+  <section id="sidequest" class="rpg-box">
+    <h2 class="rpg-title">&#9612; SIDE QUEST — OPTIONAL DUNGEON</h2>
+
+    <article class="dungeon-card">
+      <h3>Algorithm Visualizer</h3>
+      <p class="desc">A terminal-rendered visualizer for sorting, maze generation, and pathfinding algorithms — built in Java with no external UI framework, all rendering handled directly in the terminal. Used Design Patterns like Template, State, Facade, etc</p>
+      <p class="meta">JAVA / NO UI FRAMEWORK / TERMINAL RENDERING</p>
+
+      <div class="terminal-frame" id="terminalFrame">
+        <div class="terminal-start" id="terminalStart">
+          <div class="terminal-start-inner">
+            <p class="terminal-start-title">&#9654; ALGORITHM VISUALIZER</p>
+            <button type="button" id="terminalStartBtn" class="terminal-start-btn">PRESS START</button>
+            <p class="terminal-start-hint">loads a live terminal session, screen might flicker a lot becasue of latency and terminal getting cleared and painted frequently over a network</p>
+          </div>
+        </div>
+      </div>
+      <p class="meta">served from a ttyd + docker terminal, embedded live above</p>
+
+      <a class="src-link" href="https://github.com/sanztastic/terminal-algorithm-visualizer" target="_blank" rel="noopener">&#9656; view the java source on github</a>
+    </article>
+
+    <ul class="other-quests">
+      <li>
+        <div>
+          <h4>ContraJS <span class="tag-playable">PLAYABLE</span></h4>
+          <p>A browser platformer recreating classic Contra gameplay through level one — written from scratch in vanilla JavaScript, no libraries or game engine.</p>
+          <div class="tags">JAVASCRIPT / NO ENGINE</div>
+        </div>
+        <a href="https://sanztastic.github.io/ContraJS" target="_blank" rel="noopener">play</a>
+      </li>
+      <li>
+        <div>
+          <h4>Contra: Java Edition <span class="tag-progress">IN PROGRESS</span></h4>
+          <p>Rebuilding ContraJS from JavaScript into Java using OpenGL, and adding reinforcement learning from scratch implementing every libarries from scratch to make AI learn to play the game and also may be will be adding multiplayer support along the way.</p>
+          <div class="tags">JAVA / LWJGL(OpenGL)</div>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ================= PARTY / CONTACT ================= -->
+  <section id="party" class="rpg-box">
+    <h2 class="rpg-title">&#9612; RECRUIT THIS CHARACTER</h2>
+    <ul class="recruit-list">
+      <li><span class="recruit-label">Email</span><span class="recruit-value"><a href="mailto:shanandshrestha@gmail.com">shanandshrestha@gmail.com</a></span></li>
+      <li><span class="recruit-label">LinkedIn</span><span class="recruit-value"><a href="https://www.linkedin.com/in/shanand-shrestha-b71926156">+977 986 020 1254</a></span></li>
+      <li><span class="recruit-label">GitHub</span><span class="recruit-value"><a href="https://github.com/sanztastic" target="_blank" rel="noopener">github.com/sanztastic</a></span></li>
+      <li><span class="recruit-label">Site</span><span class="recruit-value"><a href="https://www.shanandshrestha.com.np" target="_blank" rel="noopener">shanandshrestha.com.np</a></span></li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  <div class="end-mark">&#9670; END OF FILE &#9670;</div>
+  <div class="credit">© <span id="year"></span> Shanand Shrestha — thanks for playing</div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  /* =========================================================
+     TERMINAL — lazy-mount the ttyd iframe only once the player
+     presses start, so the terminal connection never opens until
+     someone actually asks for it.
+     ========================================================= */
+  var REAL_TERMINAL_URL = 'https://terminal-algorithm-visualizer.onrender.com/'; // EDIT: your ttyd/docker terminal URL
+  var terminalStartBtn = document.getElementById('terminalStartBtn');
+  if (terminalStartBtn){
+    terminalStartBtn.addEventListener('click', function(){
+      var frame = document.getElementById('terminalFrame');
+      var iframe = document.createElement('iframe');
+      iframe.src = REAL_TERMINAL_URL;
+      iframe.title = 'Algorithm Visualizer — live terminal';
+      iframe.loading = 'lazy';
+      frame.innerHTML = '';
+      frame.appendChild(iframe);
+    });
+  }
+
+  /* =========================================================
+     INTRO DIALOGUE (typed, RPG text-box style)
+     ========================================================= */
+  var introBox = document.getElementById('introBox');
+  var introLines = [
+    'A SOFTWARE ENGINEER appears!',
+    'SHANAND SHRESTHA joined your party!',
+    'Backend engineer, 4+ years in Java and Spring. Ships production systems for healthcare EDI, fintech AML, and enterprise CRM.'
+  ];
+
+  function renderStaticIntro(){
+    introBox.innerHTML = '';
+    introLines.forEach(function(text){
+      var p = document.createElement('p');
+      p.className = 'line';
+      p.textContent = text;
+      introBox.appendChild(p);
+    });
+    var cur = document.createElement('span');
+    cur.className = 'cursor';
+    cur.textContent = '\u25BC';
+    introBox.appendChild(cur);
+  }
+
+  function typeIntro(){
+    var idx = 0;
+    function nextLine(){
+      if (idx >= introLines.length){
+        var cur = document.createElement('span');
+        cur.className = 'cursor';
+        cur.textContent = '\u25BC';
+        introBox.appendChild(cur);
+        return;
+      }
+      var text = introLines[idx];
+      var p = document.createElement('p');
+      p.className = 'line';
+      introBox.appendChild(p);
+      var i = 0;
+      var iv = setInterval(function(){
+        p.textContent = text.slice(0, i + 1);
+        i++;
+        if (i >= text.length){
+          clearInterval(iv);
+          idx++;
+          setTimeout(nextLine, 380);
+        }
+      }, 22);
+    }
+    nextLine();
+  }
+
+  if (reduceMotion){ renderStaticIntro(); } else { typeIntro(); }
+
+})();
+</script>
+</body>
 </html>
